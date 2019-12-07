@@ -1,5 +1,6 @@
 import sys
 import math
+from collections import deque
 from itertools import permutations
 
 sys.path.append("../05/")
@@ -16,7 +17,7 @@ if __name__ == "__main__":
         last_output = 0
 
         for amp_i in range(5):
-            inputs = [last_output, phases[amp_i]]
+            inputs = deque([phases[amp_i], last_output])
             program_copy = list(program)
             outputs = runner.run_program(program_copy, inputs)
 
