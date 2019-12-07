@@ -17,7 +17,7 @@ def read_with_mode(ints, pos, mode):
         return pos
 
 
-def add(ints, inputs, current, modes):
+def add(ints, inputs, outputs, current, modes):
     p1, p2, p3 = ints[current:current + 3]
     a = read_with_mode(ints, p1, modes[0])
     b = read_with_mode(ints, p2, modes[1])
@@ -26,7 +26,7 @@ def add(ints, inputs, current, modes):
     return current + 3
 
 
-def multiply(ints, inputs, current, modes):
+def multiply(ints, inputs, outputs, current, modes):
     p1, p2, p3 = ints[current:current + 3]
     a = read_with_mode(ints, p1, modes[0])
     b = read_with_mode(ints, p2, modes[1])
@@ -35,15 +35,15 @@ def multiply(ints, inputs, current, modes):
     return current + 3
 
 
-def read_input(ints, inputs, current, modes):
+def read_input(ints, inputs, outputs, current, modes):
     position = ints[current]
     ints[position] = inputs.pop()
     return current + 1
 
 
-def print_value(ints, inputs, current, modes):
+def print_value(ints, inputs, outputs, current, modes):
     position = ints[current]
-    print(ints[position], end=" ")
+    outputs.append(ints[position])
     return current + 1
 
 
@@ -57,6 +57,7 @@ OPERATIONS_DICT = {
 
 def run_program(ints, inputs):
     current = 0
+    outputs = []
 
     while ints[current] != 99:
         instruction = ints[current]
@@ -64,11 +65,14 @@ def run_program(ints, inputs):
         current += 1
 
         operation = OPERATIONS_DICT[opcode]
-        current = operation(ints, inputs, current, modes)
+        current = operation(ints, inputs, outputs, current, modes)
+
+    return outputs
 
 
 if __name__ == "__main__":
     program = input().rstrip()
     ints = list(map(int, program.split(",")))
 
-    run_program(ints, [1])
+    outputs = run_program(ints, [1])
+    print(" ".join(map(str, outputs)))
