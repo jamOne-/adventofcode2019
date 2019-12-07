@@ -1,3 +1,6 @@
+from collections import deque
+
+
 def extract_opcode_and_modes(instruction):
     opcode = instruction % 100
     instruction //= 100
@@ -37,7 +40,7 @@ def multiply(ints, inputs, outputs, current, modes):
 
 def read_input(ints, inputs, outputs, current, modes):
     position = ints[current]
-    ints[position] = inputs.pop()
+    ints[position] = inputs.popleft()
     return current + 1
 
 
@@ -74,5 +77,5 @@ if __name__ == "__main__":
     program = input().rstrip()
     ints = list(map(int, program.split(",")))
 
-    outputs = run_program(ints, [1])
+    outputs = run_program(ints, deque([1]))
     print(" ".join(map(str, outputs)))
