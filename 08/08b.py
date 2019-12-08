@@ -1,7 +1,3 @@
-import math
-from collections import Counter
-
-
 def decode_image(width, height, message):
     size = width * height
     image = ["2"] * size
