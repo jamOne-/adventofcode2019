@@ -30,7 +30,7 @@ def add_vectors(v1, v2):
 
 
 def vector_length(vector):
-    return abs(vector.x) + abs(vector.y) + abs(vector.z)
+    return sum(abs(value) for value in vector)
 
 
 def calculate_gravity(moon1, moon2):

@@ -1,6 +1,7 @@
 import re
 import sys
 import math
+from functools import reduce
 from collections import namedtuple
 
 Vector3D = namedtuple("Vector3D", "x y z")
@@ -24,21 +25,11 @@ def cmp(x, y):
 
 
 def lcm(xs):
-    result = xs[0]
-
-    for x in xs[1:]:
-        result = result * x / math.gcd(result, x)
-        result = int(result)
-
-    return result
+    return reduce(lambda x, y: x * y // math.gcd(x, y), xs)
 
 
 def add_vectors(v1, v2):
     return Vector3D(v1.x + v2.x, v1.y + v2.y, v1.z + v2.z)
-
-
-def vector_length(vector):
-    return abs(vector.x) + abs(vector.y) + abs(vector.z)
 
 
 def calculate_gravity(moon1, moon2):
@@ -62,12 +53,21 @@ def simulation(moons, steps):
 
 def find_axis_cycle(original_moons, axis):
     moons = [Moon(moon.position) for moon in original_moons]
-    simulation(moons, 1)
-    step = 1
+    step = 0
 
-    while any(map(lambda moon, original_moon: moon.position[axis] != original_moon.position[axis] or moon.velocity[axis] != original_moon.velocity[axis], moons, original_moons)):
+    while True:
         simulation(moons, 1)
         step += 1
+
+        if all(
+            map(
+                lambda moon, original_moon:
+                    moon.position[axis] == original_moon.position[axis] and moon.velocity[axis] == original_moon.velocity[axis],
+                moons,
+                original_moons
+            )
+        ):
+            break
 
     return step
 
