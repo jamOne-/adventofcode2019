@@ -134,6 +134,7 @@ class IntcodeComputer:
         self.relative_base = 0
         self.inputs = deque()
         self.intcode = defaultdict(int, enumerate(intcode))
+        self.state = "READY"
 
     def append_input(self, value):
         self.inputs.append(value)
@@ -158,9 +159,35 @@ class IntcodeComputer:
         outputs = []
 
         while True:
-            output = self.run_until_print_or_halt(self)
+            output = self.run_until_print_or_halt()
 
             if output != None:
                 outputs.append(output)
             else:
                 return outputs
+
+    def run(self):
+        outputs = []
+
+        while True:
+            instruction = self.intcode[self.current]
+            if instruction == 99:
+                self.state = "STOPPED"
+                break
+
+            opcode, modes = extract_opcode_and_modes(instruction)
+
+            if opcode == 3 and len(self.inputs) == 0:
+                self.state = "WAITING_FOR_INPUT"
+                break
+
+            self.current += 1
+
+            operation = OPERATIONS_DICT[opcode]
+            self.current, self.relative_base, output = operation(
+                self.intcode, self.inputs, self.relative_base, self.current, modes)
+
+            if output != None:
+                outputs.append(output)
+
+        return outputs, self.state
