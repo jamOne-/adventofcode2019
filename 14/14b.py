@@ -38,6 +38,32 @@ def find_fuel_cost(reactions):
     return cost
 
 
+def produce_while_can(reactions):
+    recipes = dict()
+
+    for reaction in reactions:
+        recipes[reaction[-1][0]] = reaction
+
+    ores = 1000000000000
+    fuel_cost = find_fuel_cost(reactions)
+    fuel_lower_bound = math.floor(ores / fuel_cost)
+    fuel_upper_bound = 2 * fuel_lower_bound
+
+    beg, end = fuel_lower_bound, fuel_upper_bound
+    while beg <= end:
+        mid = (beg + end) // 2
+        cost, _ = produce_chemical(recipes, defaultdict(int), "FUEL", mid)
+
+        if cost == ores:
+            return mid
+        elif cost < ores:
+            beg = mid + 1
+        else:
+            end = mid - 1
+
+    return end
+
+
 if __name__ == "__main__":
     reactions = []
 
@@ -49,4 +75,4 @@ if __name__ == "__main__":
         tuples = list(zip(chemicals, quantities))
         reactions.append(tuples)
 
-    print(find_fuel_cost(reactions))
+    print(produce_while_can(reactions))
