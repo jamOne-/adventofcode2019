@@ -139,6 +139,9 @@ class IntcodeComputer:
     def append_input(self, value):
         self.inputs.append(value)
 
+    def extend_input(self, iterable):
+        self.inputs.extend(iterable)
+
     def run_until_print_or_halt(self):
         while True:
             instruction = self.intcode[self.current]
