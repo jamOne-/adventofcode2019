@@ -2,46 +2,33 @@ import re
 import sys
 
 
-def deal_into_new_stack(cards):
-    return cards[::-1]
+def deal_into_new_stack(cards, pos):
+    return cards - 1 - pos
 
 
-def deal_with_increment(cards, n):
-    new_cards = [0] * len(cards)
-
-    for i, card in enumerate(cards):
-        new_cards[(i * n) % len(cards)] = card
-
-    return new_cards
+def deal_with_increment(cards, pos, n):
+    return (pos * n) % cards
 
 
-def cut(cards, n):
-    left = cards[:n]
-    right = cards[n:]
-
-    return right + left
+def cut(cards, pos, n):
+    return (pos - n) % cards
 
 
-def perform_operations(cards, operations):
+def perform_operations(cards, operations, pos):
     for operation in operations:
         if operation == "deal into new stack":
-            cards = deal_into_new_stack(cards)
+            pos = deal_into_new_stack(cards, pos)
         elif operation.startswith("deal with increment"):
             n = int(re.findall("-?\d+", operation)[0])
-            cards = deal_with_increment(cards, n)
+            pos = deal_with_increment(cards, pos, n)
         else:
             n = int(re.findall("-?\d+", operation)[0])
-            cards = cut(cards, n)
+            pos = cut(cards, pos, n)
 
-    return cards
+    return pos
 
 
 if __name__ == "__main__":
     operations = [line.rstrip() for line in sys.stdin]
-    cards = list(range(10007))
-    cards = perform_operations(cards, operations)
-
-    for position, card in enumerate(cards):
-        if card == 2019:
-            print(position)
-            break
+    position = perform_operations(10007, operations, 2019)
+    print(position)
