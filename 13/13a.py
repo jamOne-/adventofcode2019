@@ -20,6 +20,6 @@ def count_blocks(outputs):
 if __name__ == "__main__":
     intcode = list(map(int, input().rstrip().split(",")))
     intcode_computer = icc.IntcodeComputer(intcode)
-    outputs = intcode_computer.run_until_halt()
+    outputs, _ = intcode_computer.run()
 
     print(count_blocks(outputs))

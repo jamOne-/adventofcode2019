@@ -1,5 +1,13 @@
 from collections import defaultdict, deque
 
+READ = 0
+WRITE = 1
+
+INPUT = 0
+OUTPUT = 1
+JUMP = 2
+ADJUST_RELATIVE_BASE = 3
+
 
 def extract_opcode_and_modes(instruction):
     opcode = instruction % 100
@@ -13,118 +21,16 @@ def extract_opcode_and_modes(instruction):
     return opcode, modes
 
 
-def read_with_mode(ints, relative_base, pos, mode):
-    if mode == 0:
-        return ints[pos]
-    elif mode == 1:
-        return pos
-    else:
-        return ints[relative_base + pos]
-
-
-def read_position(pos, relative_base, mode):
-    if mode == 0:
-        return pos
-    elif mode == 2:
-        return pos + relative_base
-
-
-def get_slice(source, start, end):
-    return [source[i] for i in range(start, end)]
-
-
-def add(ints, inputs, relative_base, current, modes):
-    p1, p2, p3 = get_slice(ints, current, current + 3)
-    a = read_with_mode(ints, relative_base, p1, modes[0])
-    b = read_with_mode(ints, relative_base, p2, modes[1])
-    pos = read_position(p3, relative_base, modes[2])
-
-    ints[pos] = a + b
-    return current + 3, relative_base, None
-
-
-def multiply(ints, inputs, relative_base, current, modes):
-    p1, p2, p3 = get_slice(ints, current, current + 3)
-    a = read_with_mode(ints, relative_base, p1, modes[0])
-    b = read_with_mode(ints, relative_base, p2, modes[1])
-    pos = read_position(p3, relative_base, modes[2])
-
-    ints[pos] = a * b
-    return current + 3, relative_base, None
-
-
-def read_input(ints, inputs, relative_base, current, modes):
-    param = ints[current]
-    position = read_position(param, relative_base, modes[0])
-    ints[position] = inputs.popleft()
-    return current + 1, relative_base, None
-
-
-def print_value(ints, inputs, relative_base, current, modes):
-    param = ints[current]
-    value = read_with_mode(ints, relative_base, param, modes[0])
-    return current + 1, relative_base, value
-
-
-def jump_if_true(ints, inputs, relative_base, current, modes):
-    p1, p2 = ints[current], ints[current + 1]
-    a = read_with_mode(ints, relative_base, p1, modes[0])
-    b = read_with_mode(ints, relative_base, p2, modes[1])
-
-    if a != 0:
-        return b, relative_base, None
-
-    return current + 2, relative_base, None
-
-
-def jump_if_false(ints, inputs, relative_base, current, modes):
-    p1, p2 = ints[current], ints[current + 1]
-    a = read_with_mode(ints, relative_base, p1, modes[0])
-    b = read_with_mode(ints, relative_base, p2, modes[1])
-
-    if a == 0:
-        return b, relative_base, None
-
-    return current + 2, relative_base, None
-
-
-def less_than(ints, inputs, relative_base, current, modes):
-    p1, p2, p3 = get_slice(ints, current, current + 3)
-    a = read_with_mode(ints, relative_base, p1, modes[0])
-    b = read_with_mode(ints, relative_base, p2, modes[1])
-    pos = read_position(p3, relative_base, modes[2])
-
-    ints[pos] = int(a < b)
-    return current + 3, relative_base, None
-
-
-def equals(ints, inputs, relative_base, current, modes):
-    p1, p2, p3 = get_slice(ints, current, current + 3)
-    a = read_with_mode(ints, relative_base, p1, modes[0])
-    b = read_with_mode(ints, relative_base, p2, modes[1])
-    pos = read_position(p3, relative_base, modes[2])
-
-    ints[pos] = int(a == b)
-    return current + 3, relative_base, None
-
-
-def adjust_relative_base(ints, inputs, relative_base, current, modes):
-    param = ints[current]
-    a = read_with_mode(ints, relative_base, param, modes[0])
-
-    return current + 1, relative_base + a, None
-
-
 OPERATIONS_DICT = {
-    1: add,
-    2: multiply,
-    3: read_input,
-    4: print_value,
-    5: jump_if_true,
-    6: jump_if_false,
-    7: less_than,
-    8: equals,
-    9: adjust_relative_base
+    1: (lambda a, b: a + b, (READ, READ, WRITE), None),
+    2: (lambda a, b: a * b, (READ, READ, WRITE), None),
+    3: (lambda a: a, (WRITE,), INPUT),
+    4: (lambda a: a, (READ,), OUTPUT),
+    5: (lambda a, b: b if a != 0 else None, (READ, READ), JUMP),
+    6: (lambda a, b: b if a == 0 else None, (READ, READ), JUMP),
+    7: (lambda a, b: int(a < b), (READ, READ, WRITE), None),
+    8: (lambda a, b: int(a == b), (READ, READ, WRITE), None),
+    9: (lambda a: a, (READ,), ADJUST_RELATIVE_BASE)
 }
 
 
@@ -142,55 +48,57 @@ class IntcodeComputer:
     def extend_input(self, iterable):
         self.inputs.extend(iterable)
 
-    def run_until_print_or_halt(self):
-        while True:
-            instruction = self.intcode[self.current]
-            if instruction == 99:
-                return None
-
-            opcode, modes = extract_opcode_and_modes(instruction)
-            self.current += 1
-
-            operation = OPERATIONS_DICT[opcode]
-            self.current, self.relative_base, output = operation(
-                self.intcode, self.inputs, self.relative_base, self.current, modes)
-
-            if output != None:
-                return output
-
-    def run_until_halt(self):
-        outputs = []
-
-        while True:
-            output = self.run_until_print_or_halt()
-
-            if output != None:
-                outputs.append(output)
-            else:
-                return outputs
+    def intcode_slice(self, start, end):
+        return [self.intcode[i] for i in range(start, end)]
 
     def run(self):
         outputs = []
 
         while True:
             instruction = self.intcode[self.current]
+            self.current += 1
+
             if instruction == 99:
                 self.state = "STOPPED"
                 break
 
             opcode, modes = extract_opcode_and_modes(instruction)
+            operation, params_types, operation_type = OPERATIONS_DICT[opcode]
+            params_values = self.intcode_slice(
+                self.current, self.current + len(params_types))
+            self.current += len(params_types)
 
-            if opcode == 3 and len(self.inputs) == 0:
-                self.state = "WAITING_FOR_INPUT"
-                break
+            params_info = list(zip(params_values, params_types, modes))
+            read_params = filter(
+                lambda param_info: param_info[1] == READ, params_info)
+            write_params = filter(
+                lambda param_info: param_info[1] == WRITE, params_info)
 
-            self.current += 1
+            read_params = [[self.intcode[n], n, self.intcode[n +
+                                                             self.relative_base]][mode] for n, _, mode in read_params]
+            write_params = [[n, None, n + self.relative_base][mode]
+                            for n, _, mode in write_params]
 
-            operation = OPERATIONS_DICT[opcode]
-            self.current, self.relative_base, output = operation(
-                self.intcode, self.inputs, self.relative_base, self.current, modes)
+            if operation_type == INPUT:
+                if len(self.inputs) == 0:
+                    self.state = "WAITING_FOR_INPUT"
+                    self.current -= 1 + len(params_types)
+                    break
 
-            if output != None:
-                outputs.append(output)
+                read_params.append(self.inputs.popleft())
+
+            result = operation(*read_params)
+
+            for pos in write_params:
+                self.intcode[pos] = result
+
+            if operation_type == JUMP and result != None:
+                self.current = result
+
+            if operation_type == ADJUST_RELATIVE_BASE:
+                self.relative_base += result
+
+            if operation_type == OUTPUT:
+                outputs.append(result)
 
         return outputs, self.state

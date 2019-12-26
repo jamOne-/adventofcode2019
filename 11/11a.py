@@ -28,12 +28,11 @@ def paint_some(intcode):
         field = fields[current_pos]
         computer.append_input(field)
 
-        color = computer.run_until_print_or_halt()
-        if color == None:
+        outputs, state = computer.run()
+        if state == "STOPPED":
             break
 
-        rotation = computer.run_until_print_or_halt()
-
+        color, rotation = outputs
         fields[current_pos] = color
         painted.add(current_pos)
 
