@@ -4,12 +4,18 @@ icc = __import__("intcode_computer")
 
 
 if __name__ == "__main__":
-    intcode = list(map(int, input().rstrip().split(",")))
-    computer = icc.IntcodeComputer(intcode)
-    state = None
+    intcode_file = open("25.in")
+    intcode = list(map(int, intcode_file.readline().rstrip().split(",")))
+    intcode_file.close()
 
-    while state != "STOPPED":
+    computer = icc.IntcodeComputer(intcode)
+
+    while True:
         outputs, state = computer.run()
         print("".join(map(chr, outputs)))
+
+        if state == "STOPPED":
+            break
+
         instruction = input("instruction: ")
         computer.extend_input(map(ord, instruction + "\n"))
